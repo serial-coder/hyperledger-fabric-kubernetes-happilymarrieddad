@@ -1,20 +1,15 @@
 package main
 
+// https://hyperledger-fabric.readthedocs.io/en/latest/chaincode4ade.html
 import (
-	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 
-	"github.com/google/uuid"
-	"github.com/hyperledger/fabric-chaincode-go/shim"
 	"github.com/hyperledger/fabric-contract-api-go/contractapi"
 )
 
 func main() {
-	resourceTypesContract := new(ResourceTypesContract)
-
-	cc, err := contractapi.NewChaincode(resourceTypesContract)
+	cc, err := contractapi.NewChaincode(&ResourceTypesContract{})
 
 	if err != nil {
 		panic(err.Error())
@@ -30,163 +25,165 @@ type ResourceTypesContract struct {
 	contractapi.Contract
 }
 
-// ResourceType resource type
+// ResourceType resource
 type ResourceType struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
+	ID     string `json:"id"`
+	Name   string `json:"name"`
+	Active bool   `json:"active"`
 }
 
-// InitLedger adds a base set of resource types to the ledger
-func (rtc *ResourceTypesContract) InitLedger(ctx contractapi.TransactionContextInterface) error {
-	types := []ResourceType{
-		{
-			ID:   uuid.New().String(),
-			Name: "Raw Goods",
-		},
-		{
-			ID:   uuid.New().String(),
-			Name: "Processed Goods",
-		},
-	}
+// ResourceTypeTransactionItem
+type ResourceTypeTransactionItem struct {
+	TXID         string       `json:"tx_id"`
+	ResourceType ResourceType `json:"resource_type"`
+	Timestamp    int64        `json:"timestamp"`
+}
 
-	for _, t := range types {
-		typeAsBytes, err := json.Marshal(t)
-		if err != nil {
-			return errors.New("Unable to init ledger because type conversion failed")
-		}
-
-		if err := ctx.GetStub().PutState(t.ID, typeAsBytes); err != nil {
-			return fmt.Errorf("Failed to put to world state. %s", err.Error())
-		}
-	}
-
+// InitLedger adds a base set of cars to the ledger
+func (rc *ResourceTypesContract) InitLedger(ctx contractapi.TransactionContextInterface) error {
 	return nil
 }
 
-// Create adds a new key with value to the world state
-func (rtc *ResourceTypesContract) Create(ctx contractapi.TransactionContextInterface, value string) error {
-	var newResourceType ResourceType
-
-	if err := json.Unmarshal([]byte(value), &newResourceType); err != nil {
-		return err
-	}
-
-	newResourceType.ID = uuid.New().String()
-
-	existing, err := ctx.GetStub().GetState(newResourceType.ID)
+// Create adds a new id with value to the world state
+func (rc *ResourceTypesContract) Create(ctx contractapi.TransactionContextInterface, id string, name string) error {
+	existing, err := ctx.GetStub().GetState(id)
 
 	if err != nil {
-		return errors.New("Unable to interact with world state")
+		return fmt.Errorf("Unable to interact with world state")
 	}
 
 	if existing != nil {
-		return fmt.Errorf("Cannot create world state pair with key %s. Already exists", newResourceType.ID)
+		return fmt.Errorf("Cannot create world state pair with id %s. Already exists", id)
+	}
+
+	newResourceType := &ResourceType{
+		ID:     id,
+		Name:   name, // TODO: Verify this name is unique
+		Active: true,
 	}
 
 	bytes, err := json.Marshal(newResourceType)
 	if err != nil {
-		return errors.New("Unable to marshal data")
+		return fmt.Errorf("Unable to marshal object")
 	}
 
-	if err = ctx.GetStub().PutState(newResourceType.ID, bytes); err != nil {
-		return errors.New("Unable to interact with world state")
-	}
-
-	return nil
-}
-
-// Update changes the value with key in the world state
-func (rtc *ResourceTypesContract) Update(ctx contractapi.TransactionContextInterface, key string, value string) error {
-	existing, err := ctx.GetStub().GetState(key)
-
-	if err != nil {
-		return errors.New("Unable to interact with world state")
-	}
-
-	if existing == nil {
-		return fmt.Errorf("Cannot update world state pair with key %s. Does not exist", key)
-	}
-
-	err = ctx.GetStub().PutState(key, []byte(value))
-
-	if err != nil {
-		return errors.New("Unable to interact with world state")
+	if err = ctx.GetStub().PutState(id, bytes); err != nil {
+		return fmt.Errorf("Unable to interact with world state")
 	}
 
 	return nil
 }
 
-// Read returns the value at key in the world state
-func (rtc *ResourceTypesContract) Read(ctx contractapi.TransactionContextInterface, key string) (string, error) {
-	existing, err := ctx.GetStub().GetState(key)
+// Update changes the value with id in the world state
+func (rc *ResourceTypesContract) Update(ctx contractapi.TransactionContextInterface, id string, name string) error {
+	existing, err := ctx.GetStub().GetState(id)
 
 	if err != nil {
-		return "", errors.New("Unable to interact with world state")
+		return fmt.Errorf("Unable to interact with world state")
 	}
 
 	if existing == nil {
-		return "", fmt.Errorf("Cannot read world state pair with key %s. Does not exist", key)
+		return fmt.Errorf("Cannot update world state pair with id %s. Does not exist", id)
 	}
 
-	return string(existing), nil
+	var existingResourceType *ResourceType
+	if err = json.Unmarshal(existing, &existingResourceType); err != nil {
+		return fmt.Errorf("Unable to unmarshal existing into object")
+	}
+	existingResourceType.Name = name
+
+	newValue, err := json.Marshal(existingResourceType)
+	if err != nil {
+		return fmt.Errorf("Unable to marshal new object")
+	}
+
+	if err = ctx.GetStub().PutState(id, newValue); err != nil {
+		return fmt.Errorf("Unable to interact with world state")
+	}
+
+	return nil
 }
 
-// Read all resource types from the world state
-func (rtc *ResourceTypesContract) Index(
-	ctx contractapi.TransactionContextInterface,
-	query string,
-	pageSize int32,
-	bookmark string,
-) (ret string, err error) {
-	if len(query) == 0 {
-		query = `{"selector": {"id":{"$ne":"-"}}}`
-	}
-
-	resultsIterator, _, err := ctx.GetStub().GetQueryResultWithPagination(query, pageSize, bookmark)
+// Read returns the value at id in the world state
+func (rc *ResourceTypesContract) Read(ctx contractapi.TransactionContextInterface, id string) (ret *ResourceType, err error) {
+	resultsIterator, _, err := ctx.GetStub().GetQueryResultWithPagination(`{"selector": {"id":"`+id+`"}}`, 0, "")
 	if err != nil {
 		return
 	}
 	defer resultsIterator.Close()
 
-	buffer, err := constructQueryResponseFromIterator(resultsIterator)
+	if resultsIterator.HasNext() {
+		ret = new(ResourceType)
+		queryResponse, err2 := resultsIterator.Next()
+		if err2 != nil {
+			return nil, err2
+		}
+
+		if err = json.Unmarshal(queryResponse.Value, ret); err != nil {
+			return
+		}
+	} else {
+		return nil, fmt.Errorf("Unable to find item in world state")
+	}
+
+	return
+}
+
+// Index - read all resources from the world state
+func (rc *ResourceTypesContract) Index(
+	ctx contractapi.TransactionContextInterface,
+) (rets []*ResourceType, err error) {
+	resultsIterator, _, err := ctx.GetStub().GetQueryResultWithPagination(`{"selector": {"id":{"$ne":"-"}}}`, 0, "")
 	if err != nil {
 		return
 	}
+	defer resultsIterator.Close()
 
-	return buffer.String(), nil
+	for resultsIterator.HasNext() {
+		queryResponse, err2 := resultsIterator.Next()
+		if err2 != nil {
+			return nil, err2
+		}
+
+		res := new(ResourceType)
+		if err = json.Unmarshal(queryResponse.Value, res); err != nil {
+			return
+		}
+
+		rets = append(rets, res)
+	}
+
+	return
 }
 
-// ===========================================================================================
-// constructQueryResponseFromIterator constructs a JSON array containing query results from
-// a given result iterator
-// ===========================================================================================
-func constructQueryResponseFromIterator(resultsIterator shim.StateQueryIteratorInterface) (*bytes.Buffer, error) {
-	// buffer is a JSON array containing QueryResults
-	var buffer bytes.Buffer
-	buffer.WriteString("[")
+// Transactions get all the transactions of an id
+func (rc *ResourceTypesContract) Transactions(
+	ctx contractapi.TransactionContextInterface,
+	id string,
+) ([]*ResourceTypeTransactionItem, error) {
+	historyIface, err := ctx.GetStub().GetHistoryForKey(id)
+	if err != nil {
+		return nil, err
+	}
 
-	bArrayMemberAlreadyWritten := false
-	for resultsIterator.HasNext() {
-		queryResponse, err := resultsIterator.Next()
+	var rets []*ResourceTypeTransactionItem
+	for historyIface.HasNext() {
+		val, err := historyIface.Next()
 		if err != nil {
 			return nil, err
 		}
-		// Add a comma before array members, suppress it for the first array member
-		if bArrayMemberAlreadyWritten == true {
-			buffer.WriteString(",")
+
+		var res ResourceType
+		if err = json.Unmarshal(val.Value, &res); err != nil {
+			return nil, err
 		}
-		buffer.WriteString("{\"Key\":")
-		buffer.WriteString("\"")
-		buffer.WriteString(queryResponse.Key)
-		buffer.WriteString("\"")
 
-		buffer.WriteString(", \"Record\":")
-		// Record is a JSON object, so we write as-is
-		buffer.WriteString(string(queryResponse.Value))
-		buffer.WriteString("}")
-		bArrayMemberAlreadyWritten = true
+		rets = append(rets, &ResourceTypeTransactionItem{
+			TXID:         val.TxId,
+			Timestamp:    int64(val.Timestamp.GetNanos()),
+			ResourceType: res,
+		})
 	}
-	buffer.WriteString("]")
 
-	return &buffer, nil
+	return rets, nil
 }

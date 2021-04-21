@@ -1,4 +1,8 @@
-version: '2'
+version: '2.1'
+
+volumes:
+  pgdata:
+  walletstore:
 
 networks:
   hyperledger:
@@ -7,9 +11,8 @@ services:
   # Orderers
   orderer0:
     container_name: orderer0
-    image: hyperledger/fabric-orderer:2.0
+    image: hyperledger/fabric-orderer:2.2
     working_dir: /var/hyperledger/orderer
-    restart: always
     environment: 
       - ORDERER_GENERAL_LISTENADDRESS=0.0.0.0
       - ORDERER_GENERAL_GENESISMETHOD=file
@@ -38,9 +41,8 @@ services:
       - hyperledger
   orderer1:
     container_name: orderer1
-    image: hyperledger/fabric-orderer:2.0
+    image: hyperledger/fabric-orderer:2.2
     working_dir: /var/hyperledger/orderer
-    restart: always
     environment: 
       - ORDERER_GENERAL_LISTENADDRESS=0.0.0.0
       - ORDERER_GENERAL_GENESISMETHOD=file
@@ -69,7 +71,7 @@ services:
       - hyperledger
   orderer2:
     container_name: orderer2
-    image: hyperledger/fabric-orderer:2.0
+    image: hyperledger/fabric-orderer:2.2
     environment: 
       - ORDERER_GENERAL_LISTENADDRESS=0.0.0.0
       - ORDERER_GENERAL_GENESISMETHOD=file
@@ -101,7 +103,6 @@ services:
   peer0-org1-couchdb:
     image: couchdb:2.3.1
     container_name: peer0-org1-couchdb
-    restart: always
     environment:
       - COUCHDB_USER=nick
       - COUCHDB_PASSWORD=1234
@@ -112,10 +113,9 @@ services:
     networks:
       - hyperledger
   peer0-org1:
-    image: hyperledger/fabric-peer:2.0
+    image: hyperledger/fabric-peer:2.2
     container_name: peer0-org1
     working_dir: /opt/gopath/src/github.com/hyperledger/fabric/peer
-    restart: always
     command: peer node start
     environment:
       #- FABRIC_LOGGING_SPEC=DEBUG
@@ -130,7 +130,6 @@ services:
       - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:7052
       - CORE_PEER_LOCALMSPID=org1
       - CORE_PEER_ENDORSER_ENABLED=true
-      - CORE_PEER_GOSSIP_USELEADERELECTION=true
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
@@ -157,7 +156,6 @@ services:
   peer1-org1-couchdb:
     image: couchdb:2.3.1
     container_name: peer1-org1-couchdb
-    restart: always
     environment:
       - COUCHDB_USER=nick
       - COUCHDB_PASSWORD=1234
@@ -168,10 +166,9 @@ services:
     networks:
       - hyperledger
   peer1-org1:
-    image: hyperledger/fabric-peer:2.0
+    image: hyperledger/fabric-peer:2.2
     container_name: peer1-org1
     working_dir: /opt/gopath/src/github.com/hyperledger/fabric/peer
-    restart: always
     command: peer node start
     environment:
       #- FABRIC_LOGGING_SPEC=DEBUG
@@ -186,7 +183,6 @@ services:
       - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:8052
       - CORE_PEER_LOCALMSPID=org1
       - CORE_PEER_ENDORSER_ENABLED=true
-      - CORE_PEER_GOSSIP_USELEADERELECTION=true
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
@@ -215,7 +211,6 @@ services:
   peer0-org2-couchdb:
     image: couchdb:2.3.1
     container_name: peer0-org2-couchdb
-    restart: always
     environment:
       - COUCHDB_USER=nick
       - COUCHDB_PASSWORD=1234
@@ -226,10 +221,9 @@ services:
     networks:
       - hyperledger
   peer0-org2:
-    image: hyperledger/fabric-peer:2.0
+    image: hyperledger/fabric-peer:2.2
     container_name: peer0-org2
     working_dir: /opt/gopath/src/github.com/hyperledger/fabric/peer
-    restart: always
     command: peer node start
     environment:
       #- FABRIC_LOGGING_SPEC=DEBUG
@@ -244,7 +238,6 @@ services:
       - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:7052
       - CORE_PEER_LOCALMSPID=org2
       - CORE_PEER_ENDORSER_ENABLED=true
-      - CORE_PEER_GOSSIP_USELEADERELECTION=true
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
@@ -271,7 +264,6 @@ services:
   peer1-org2-couchdb:
     image: couchdb:2.3.1
     container_name: peer1-org2-couchdb
-    restart: always
     environment:
       - COUCHDB_USER=nick
       - COUCHDB_PASSWORD=1234
@@ -282,10 +274,9 @@ services:
     networks:
       - hyperledger
   peer1-org2:
-    image: hyperledger/fabric-peer:2.0
+    image: hyperledger/fabric-peer:2.2
     container_name: peer1-org2
     working_dir: /opt/gopath/src/github.com/hyperledger/fabric/peer
-    restart: always
     command: peer node start
     environment:
       #- FABRIC_LOGGING_SPEC=DEBUG
@@ -300,7 +291,6 @@ services:
       - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:8052
       - CORE_PEER_LOCALMSPID=org2
       - CORE_PEER_ENDORSER_ENABLED=true
-      - CORE_PEER_GOSSIP_USELEADERELECTION=true
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
@@ -328,8 +318,7 @@ services:
   # CLIs
   cli-peer0-org1:
     container_name: cli-peer0-org1
-    image: hyperledger/fabric-tools:2.0
-    restart: always
+    image: hyperledger/fabric-tools:2.2
     environment:
       - GOPATH=/opt/gopath
       - CORE_PEER_ADDRESSAUTODETECT=true
@@ -360,8 +349,7 @@ services:
 
   cli-peer1-org1:
     container_name: cli-peer1-org1
-    image: hyperledger/fabric-tools:2.0
-    restart: always
+    image: hyperledger/fabric-tools:2.2
     environment:
       - GOPATH=/opt/gopath
       - CORE_PEER_ADDRESSAUTODETECT=true
@@ -392,8 +380,7 @@ services:
 
   cli-peer0-org2:
     container_name: cli-peer0-org2
-    image: hyperledger/fabric-tools:2.0
-    restart: always
+    image: hyperledger/fabric-tools:2.2
     environment:
       - GOPATH=/opt/gopath
       - CORE_PEER_ADDRESSAUTODETECT=true
@@ -424,8 +411,7 @@ services:
 
   cli-peer1-org2:
     container_name: cli-peer1-org2
-    image: hyperledger/fabric-tools:2.0
-    restart: always
+    image: hyperledger/fabric-tools:2.2
     environment:
       - GOPATH=/opt/gopath
       - CORE_PEER_ADDRESSAUTODETECT=true
@@ -451,5 +437,72 @@ services:
     depends_on:
       - peer1-org2
     command: sleep 500000
+    networks:
+      - hyperledger
+
+  explorerdb:
+    image: hyperledger/explorer-db:latest
+    container_name: explorerdb
+    hostname: explorerdb
+    environment:
+      - DATABASE_DATABASE=fabricexplorer
+      - DATABASE_USERNAME=hppoc
+      - DATABASE_PASSWORD=password
+    healthcheck:
+      test: "pg_isready -h localhost -p 5432 -q -U postgres"
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    depends_on:
+      - peer0-org1
+      - peer1-org1
+      - peer0-org2
+      - peer1-org2
+    networks:
+      - hyperledger
+
+  explorer:
+    image: hyperledger/explorer:latest
+    container_name: explorer
+    hostname: explorer
+    environment:
+      - DATABASE_HOST=explorerdb
+      - DATABASE_DATABASE=fabricexplorer
+      - DATABASE_USERNAME=hppoc
+      - DATABASE_PASSWD=password
+      - LOG_LEVEL_APP=debug
+      - LOG_LEVEL_DB=debug
+      - LOG_LEVEL_CONSOLE=info
+      - LOG_CONSOLE_STDOUT=true
+      - DISCOVERY_AS_LOCALHOST=false
+    volumes:
+      - ./explorer/config.json:/opt/explorer/app/platform/fabric/config.json
+      - ./explorer/connection-profile:/opt/explorer/app/platform/fabric/connection-profile
+      - ./crypto-config:/tmp/crypto
+      - ./explorer/walletstore:/opt/wallet
+    command: sh -c "node /opt/explorer/main.js && tail -f /dev/null"
+    ports:
+      - 8080:8080
+    depends_on:
+      explorerdb:
+        condition: service_healthy
+    networks:
+      - hyperledger
+
+  api:
+    image: node
+    working_dir: /api
+    container_name: api
+    command: node index.js
+    ports:
+      - 4000:4000
+    volumes:
+      - ../api:/api
+      - ./crypto-config/:/tmp/crypto
+    depends_on:
+      explorerdb:
+        condition: service_healthy
     networks:
       - hyperledger
